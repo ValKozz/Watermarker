@@ -2,6 +2,7 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox, END, colorchooser
 from PIL import Image, ImageTk, ImageFont, ImageDraw
+from tkinter import ttk
 
 ctk.set_appearance_mode('dark')
 
@@ -32,29 +33,38 @@ class App(ctk.CTk):
         def update_canvas(raw_image):
             self.raw_image = raw_image
             self.image_to_display = ImageTk.PhotoImage(raw_image)
+
             new_width = raw_image.size[0]
             new_height = raw_image.size[1]
 
             self.image_canvas.configure(width=new_width, height=new_height)
             self.image_canvas.create_image((0, 0), image=self.image_to_display, anchor='nw')
 
-        def draw_text():
+        def paint_image():
             if check_for_img():
                 opacity = int(self.opacity_slider.get())
                 size = int(self.size_slider.get())
+
                 text_to_paint = self.text_box.get(0.0, END)
-                raw_image = self.painter.draw_text(text=text_to_paint, opacity=opacity, size=size, position=self.draw_pos)
+                raw_image = self.painter.draw_text(
+                    text=text_to_paint,
+                    opacity=opacity,
+                    size=size,
+                    position=self.draw_pos)
+
                 update_canvas(raw_image)
 
         def pick_color():
             if check_for_img():
-                color = colorchooser.askcolor()
-                rgb_color = color[0]
-                self.painter.color = rgb_color
+                self.painter.color = colorchooser.askcolor()
+                update_canvas(self.raw_image)
+                # TO-DO: Make this more efficient and less clunky
+                self.color_preview.configure(background=self.painter.color[1])
+                refresh_on_event(None)
 
         def click_to_move(event):
             self.draw_pos = (event.x, event.y)
-            draw_text()
+            paint_image()
 
         def save_image():
             if check_for_img():
@@ -85,6 +95,23 @@ class App(ctk.CTk):
                 return False
             return True
 
+        def refresh_on_event(event):
+            if check_for_img():
+                paint_image()
+
+        def text_checkbox():
+            if self.text_input_checkbox.get():
+                # Text frame and box move
+                self.text_frame.grid(row=1, column=2, padx=10, pady=10)
+                self.text_input_checkbox.configure(self.text_frame)
+                self.text_input_checkbox.grid(column=3, sticky='n')
+
+            else:
+                # Text Box remove and reset of elements
+                self.text_frame.grid_forget()
+                self.text_input_checkbox.configure(self)
+                self.text_input_checkbox.grid(row=1, column=2)
+
         # Buttons
         self.button_frame = ctk.CTkFrame(self)
         self.button_frame.grid(column=0, row=1, sticky='nw', padx=20)
@@ -103,42 +130,58 @@ class App(ctk.CTk):
         self.opacity_label.grid(row=0, column=0)
 
         self.opacity_slider = ctk.CTkSlider(self.slider_frame, from_=0, to=255, orientation='vertical',
-                                            number_of_steps=255)
+                                            number_of_steps=255, command=refresh_on_event)
         self.opacity_slider.grid(row=1, column=0)
 
         self.size_label = ctk.CTkLabel(self.slider_frame, text='Size')
         self.size_label.grid(row=0, column=1)
 
-        self.size_slider = ctk.CTkSlider(self.slider_frame, from_=0, to=255, orientation='vertical',
-                                         number_of_steps=255)
+        self.size_slider = ctk.CTkSlider(self.slider_frame, from_=1, to=255, orientation='vertical',
+                                         number_of_steps=255, command=refresh_on_event)
         self.size_slider.grid(row=1, column=1, padx=20)
 
-        self.pick_color_btn = ctk.CTkButton(self.slider_frame, text='Pick Color', command=pick_color)
-        self.pick_color_btn.grid(pady=5, row=2, column=0)
-
-        # image canvas
+        # Image canvas
         self.image_canvas = ctk.CTkCanvas(self, height=400, width=600)
         self.image_canvas.grid(row=0, column=0, columnspan=5, pady=20, padx=20)
         self.image_canvas.bind('<B1-Motion>', click_to_move)
 
+        # Color select
+        self.color_frame = ctk.CTkFrame(self.button_frame)
+        self.color_frame.grid(row=2, column=0, sticky='nw', padx=20)
+
+        self.color_preview = ctk.CTkCanvas(self.color_frame, width=20, height=20, background=self.painter.color[1])
+        self.color_preview.grid(pady=10)
+
+        self.pick_color_btn = ctk.CTkButton(self.color_frame, text='Pick Color', command=pick_color)
+        self.pick_color_btn.grid(pady=5, row=2, column=0)
+
         # Testing textbox
         self.text_frame = ctk.CTkFrame(self)
-        self.text_frame.grid(row=1, column=2, padx=10)
+
+        self.text_input_checkbox = ctk.CTkCheckBox(self, text='Input text', command=text_checkbox)
+        self.text_input_checkbox.grid(row=1, column=2)
+
+        self.text_label = ctk.CTkLabel(self.text_frame, text='Enter Text:')
+        self.text_label.grid(padx=15, pady=5, row=0, sticky='w')
 
         self.text_box = tk.Text(self.text_frame, width=50, height=10)
-        self.text_box.grid(column=0, row=0, pady=20, padx=20)
+        self.text_box.grid(row=1, pady=20, padx=20)
 
-        self.apply_btn = ctk.CTkButton(self.text_frame, text='Apply', command=draw_text)
+        self.apply_btn = ctk.CTkButton(self.text_frame, text='Apply', command=paint_image)
         self.apply_btn.grid(pady=5, sticky='e', padx=10)
+
+
 
 
 class Painter:
     def __init__(self):
         self.image = None
         self.image_path = None
-        self.color = 255, 255, 255
+        self.color = ((255, 255, 255), '#FFFFFF')
 
     def draw_text(self, text, opacity, size, position):
+        color_rgb = self.color[0]
+
         with Image.open(self.image_path).convert('RGBA') as base:
             # make a blank image for the text, initialized to transparent text color
             overlayed_image = Image.new("RGBA", base.size, (255, 255, 255, 0))
@@ -147,10 +190,10 @@ class Painter:
             font = ImageFont.truetype(font='Pillow/Tests/FreeMono.ttf', size=size)
             # Get the context i.e. do what to what
             draw = ImageDraw.Draw(overlayed_image)
-            draw.text(position, text, font=font, fill=(self.color[0], self.color[1], self.color[2], opacity))
+            # TO-DO: Find better way to retrieve rgb values outside the tuple
+            draw.text(position, text, font=font, fill=(color_rgb[0], color_rgb[1], color_rgb[2], opacity))
 
             out = Image.alpha_composite(base, overlayed_image)
-            # self.image = out
             return out
 
     def load_image(self):
