@@ -2,7 +2,6 @@ import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox, END, colorchooser
 from PIL import Image, ImageTk, ImageFont, ImageDraw
-from tkinter import ttk
 
 ctk.set_appearance_mode('dark')
 
@@ -99,6 +98,9 @@ class App(ctk.CTk):
             if check_for_img():
                 paint_image()
 
+        def reset_image():
+            update_canvas(self.painter.load_image())
+
         def text_checkbox():
             if self.text_input_checkbox.get():
                 # Text frame and box move
@@ -122,6 +124,9 @@ class App(ctk.CTk):
         self.save_btn = ctk.CTkButton(self.button_frame, text='Save', command=save_image)
         self.save_btn.grid(pady=5)
 
+        self.reset_image_btn = ctk.CTkButton(self.button_frame, text='Reset', command=reset_image)
+        self.reset_image_btn.grid(pady=5, row=3)
+
         # Sliders
         self.slider_frame = ctk.CTkFrame(self)
         self.slider_frame.grid(row=1, column=1, rowspan=2)
@@ -139,11 +144,6 @@ class App(ctk.CTk):
         self.size_slider = ctk.CTkSlider(self.slider_frame, from_=1, to=255, orientation='vertical',
                                          number_of_steps=255, command=refresh_on_event)
         self.size_slider.grid(row=1, column=1, padx=20)
-
-        # Image canvas
-        self.image_canvas = ctk.CTkCanvas(self, height=400, width=600)
-        self.image_canvas.grid(row=0, column=0, columnspan=5, pady=20, padx=20)
-        self.image_canvas.bind('<B1-Motion>', click_to_move)
 
         # Color select
         self.color_frame = ctk.CTkFrame(self.button_frame)
@@ -170,7 +170,12 @@ class App(ctk.CTk):
         self.apply_btn = ctk.CTkButton(self.text_frame, text='Apply', command=paint_image)
         self.apply_btn.grid(pady=5, sticky='e', padx=10)
 
+        # Transpose image button
 
+        # Image canvas
+        self.image_canvas = ctk.CTkCanvas(self, height=400, width=600)
+        self.image_canvas.grid(row=0, column=0, columnspan=5, pady=20, padx=20)
+        self.image_canvas.bind('<B1-Motion>', click_to_move)
 
 
 class Painter:
@@ -195,6 +200,10 @@ class Painter:
 
             out = Image.alpha_composite(base, overlayed_image)
             return out
+
+    def draw_image(self):
+        """TO-DO: Add abillity to transpose images"""
+        pass
 
     def load_image(self):
         if self.image_path:
