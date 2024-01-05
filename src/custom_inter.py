@@ -14,9 +14,13 @@ class App(ctk.CTk):
         self.title = 'Watermarker'
         self.minsize(width=400, height=360)
         self.painter = Painter()
+        self.draw_pos = (0, 0)
+        self.file_types = (('JPEG files', '*.jpeg *.jpg'),
+                          ('PNG files', '*.png'),
+                          ('All files', '*.*'))
+        # Images have to be defined this way, so they don't get garbage collected
         self.image_to_display = None
         self.raw_image = None
-        self.draw_pos = (0, 0)
 
         # Buttons
         def select_file():
@@ -24,9 +28,9 @@ class App(ctk.CTk):
                          ('PNG files', '*.png'),
                          ('All files', '*.*'))
 
-            path = filedialog.askopenfilename(filetypes=filetypes)
-            if path:
-                self.painter.image_path = path
+            file_path = filedialog.askopenfilename(filetypes=filetypes)
+            if file_path:
+                self.painter.image_path = file_path
                 update_canvas(self.painter.load_image())
 
         def update_canvas(raw_image):
@@ -67,25 +71,19 @@ class App(ctk.CTk):
 
         def save_image():
             if check_for_img():
-                file_types = (('JPEG files', '*.jpeg *.jpg'),
-                              ('PNG files', '*.png'),
-                              ('All files', '*.*'))
-
                 # VERY SLOPPY, TO-DO: Fix this mess
-                if self.image_to_display:
+                io_wrapper = filedialog.asksaveasfile(filetypes=self.file_types)
 
-                    io_wrapper = filedialog.asksaveasfile(filetypes=file_types)
-
-                    path = str(io_wrapper).split(' ')[1]
-                    extension = path.split('.')[1].upper().strip("'")
-                    if extension == 'JPEG':
-                        rgb_image = self.raw_image.convert('RGB')
-                        rgb_image.save(io_wrapper)
-                    else:
-                        self.raw_image.save(io_wrapper)
-
+                path = str(io_wrapper).split(' ')[1]
+                extension = path.split('.')[1].upper().strip("'")
+                if extension == 'JPEG':
+                    rgb_image = self.raw_image.convert('RGB')
+                    rgb_image.save(io_wrapper)
                 else:
-                    return messagebox.showwarning(title='File', message='No image provided.')
+                    self.raw_image.save(io_wrapper)
+
+            else:
+                return messagebox.showwarning(title='File', message='No image provided.')
 
         def check_for_img():
             if not self.painter.image:
@@ -113,6 +111,15 @@ class App(ctk.CTk):
                 self.text_frame.grid_forget()
                 self.text_input_checkbox.configure(self)
                 self.text_input_checkbox.grid(row=1, column=2)
+
+        def transpose_image():
+            if check_for_img():
+                file_path = filedialog.askopenfilename(filetypes=self.file_types)
+                if file_path:
+                    image_transpose = Image.open(file_path)
+
+
+
 
         # Buttons
         self.button_frame = ctk.CTkFrame(self)
@@ -171,6 +178,8 @@ class App(ctk.CTk):
         self.apply_btn.grid(pady=5, sticky='e', padx=10)
 
         # Transpose image button
+        self.add_image_btn = ctk.CTkButton(self.button_frame, text='Add image', command=transpose_image)
+        self.add_image_btn.grid(pady=5)
 
         # Image canvas
         self.image_canvas = ctk.CTkCanvas(self, height=400, width=600)
@@ -202,7 +211,7 @@ class Painter:
             return out
 
     def draw_image(self):
-        """TO-DO: Add abillity to transpose images"""
+        """TO-DO: Add ability to transpose images, will probably need rework"""
         pass
 
     def load_image(self):
