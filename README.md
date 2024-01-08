@@ -8,9 +8,4 @@ TO-DO:
 * Expand supported formats
 * Etc.
 
-# Dependancies/Impots
-* customtkinter
-* tkinter
-* PIL
-
 Work in Progress.
