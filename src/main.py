@@ -1,7 +1,7 @@
 import customtkinter as ctk
 import tkinter as tk
 from tkinter import filedialog, messagebox, END, colorchooser
-from PIL import Image, ImageTk, ImageFont, ImageDraw
+from Painter import Painter
 
 ctk.set_appearance_mode('dark')
 
@@ -20,22 +20,19 @@ class App(ctk.CTk):
                            ('All files', '*.*'))
         # Images have to be defined this way, so they don't get garbage collected
         self.image_to_display = None
-        self.raw_image = None
 
         # Buttons
         def select_file():
-            filetypes = (('JPEG files', '*.jpeg *.jpg'),
-                         ('PNG files', '*.png'),
-                         ('All files', '*.*'))
+            file_path = filedialog.askopenfilename(filetypes=self.file_types)
 
-            file_path = filedialog.askopenfilename(filetypes=filetypes)
             if file_path:
                 self.painter.image_path = file_path
-                update_canvas(self.painter.load_image())
+                self.painter.load_image()
+                update_canvas()
 
-        def update_canvas(raw_image):
-            self.raw_image = raw_image
-            self.image_to_display = ImageTk.PhotoImage(raw_image)
+        def update_canvas():
+            raw_image = self.painter.image
+            self.image_to_display = self.painter.return_image()
 
             new_width = raw_image.size[0]
             new_height = raw_image.size[1]
@@ -49,18 +46,19 @@ class App(ctk.CTk):
                 size = int(self.size_slider.get())
 
                 text_to_paint = self.text_box.get(0.0, END)
-                raw_image = self.painter.draw_text(
+
+                self.painter.draw_text(
                     text=text_to_paint,
                     opacity=opacity,
                     size=size,
                     position=self.draw_pos)
 
-                update_canvas(raw_image)
+                update_canvas()
 
         def pick_color():
             if check_for_img():
                 self.painter.color = colorchooser.askcolor()
-                update_canvas(self.raw_image)
+                update_canvas()
                 # TO-DO: Make this more efficient and less clunky
                 self.color_preview.configure(background=self.painter.color[1])
                 refresh_on_event(None)
@@ -76,14 +74,8 @@ class App(ctk.CTk):
 
                 path = str(io_wrapper).split(' ')[1]
                 extension = path.split('.')[1].upper().strip("'")
-                if extension == 'JPEG':
-                    rgb_image = self.raw_image.convert('RGB')
-                    rgb_image.save(io_wrapper)
-                else:
-                    self.raw_image.save(io_wrapper)
 
-            else:
-                return messagebox.showwarning(title='File', message='No image provided.')
+                self.painter.save_image(extension, io_wrapper)
 
         def check_for_img():
             if not self.painter.image:
@@ -97,7 +89,8 @@ class App(ctk.CTk):
                 paint_image()
 
         def reset_image():
-            update_canvas(self.painter.load_image())
+            self.painter.reset_image()
+            update_canvas()
 
         def text_checkbox():
             if self.text_input_checkbox.get():
@@ -115,8 +108,8 @@ class App(ctk.CTk):
         def transpose_image():
             if check_for_img():
                 file_path = filedialog.askopenfilename(filetypes=self.file_types)
-                if file_path:
-                    image_transpose = Image.open(file_path)
+                output = self.painter.draw_image(file_path)
+                pass
 
         # Buttons
         self.button_frame = ctk.CTkFrame(self)
@@ -180,42 +173,8 @@ class App(ctk.CTk):
 
         # Image canvas
         self.image_canvas = ctk.CTkCanvas(self, height=400, width=600)
-        self.image_canvas.grid(row=0, column=0, columnspan=5, pady=20, padx=20, sticky='nsew')
+        self.image_canvas.grid(row=0, column=0, columnspan=5, pady=20, padx=20)
         self.image_canvas.bind('<B1-Motion>', click_to_move)
-
-
-class Painter:
-    def __init__(self):
-        self.image = None
-        self.image_path = None
-        self.color = ((255, 255, 255), '#FFFFFF')
-
-    def draw_text(self, text, opacity, size, position):
-        color_rgb = self.color[0]
-
-        with Image.open(self.image_path).convert('RGBA') as base:
-            # make a blank image for the text, initialized to transparent text color
-            overlayed_image = Image.new("RGBA", base.size, (255, 255, 255, 0))
-
-            # Get the font
-            font = ImageFont.truetype(font='Pillow/Tests/FreeMono.ttf', size=size)
-            # Get the context i.e. do what to what
-            draw = ImageDraw.Draw(overlayed_image)
-            # TO-DO: Find better way to retrieve rgb values outside the tuple
-            draw.text(position, text, font=font, fill=(color_rgb[0], color_rgb[1], color_rgb[2], opacity))
-
-            out = Image.alpha_composite(base, overlayed_image)
-            return out
-
-    def draw_image(self):
-        """TO-DO: Add ability to transpose images, will probably need rework"""
-        pass
-
-    def load_image(self):
-        if self.image_path:
-            self.image = Image.open(self.image_path)
-            return self.image
-        return None
 
 
 if __name__ == '__main__':
