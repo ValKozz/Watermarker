@@ -16,8 +16,8 @@ class App(ctk.CTk):
         self.painter = Painter()
         self.draw_pos = (0, 0)
         self.file_types = (('JPEG files', '*.jpeg *.jpg'),
-                          ('PNG files', '*.png'),
-                          ('All files', '*.*'))
+                           ('PNG files', '*.png'),
+                           ('All files', '*.*'))
         # Images have to be defined this way, so they don't get garbage collected
         self.image_to_display = None
         self.raw_image = None
@@ -118,9 +118,6 @@ class App(ctk.CTk):
                 if file_path:
                     image_transpose = Image.open(file_path)
 
-
-
-
         # Buttons
         self.button_frame = ctk.CTkFrame(self)
         self.button_frame.grid(column=0, row=1, sticky='nw', padx=20)
@@ -183,7 +180,7 @@ class App(ctk.CTk):
 
         # Image canvas
         self.image_canvas = ctk.CTkCanvas(self, height=400, width=600)
-        self.image_canvas.grid(row=0, column=0, columnspan=5, pady=20, padx=20)
+        self.image_canvas.grid(row=0, column=0, columnspan=5, pady=20, padx=20, sticky='nsew')
         self.image_canvas.bind('<B1-Motion>', click_to_move)
 
 
