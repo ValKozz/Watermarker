@@ -92,18 +92,22 @@ class App(ctk.CTk):
             self.painter.reset_image()
             update_canvas()
 
-        def text_checkbox():
+        def text_checkbox_place():
             if self.text_input_checkbox.get():
                 # Text frame and box move
-                self.text_frame.grid(row=1, column=2, padx=10, pady=10)
+                # self.text_frame.grid(row=1, column=2, padx=10, pady=10)
+                self.text_frame.pack(pady=20)
                 self.text_input_checkbox.configure(self.text_frame)
-                self.text_input_checkbox.grid(column=3, sticky='n')
+                # self.text_input_checkbox.grid(column=3, sticky='n')
+                self.text_input_checkbox.pack(side='right', padx=10)
 
             else:
                 # Text Box remove and reset of elements
-                self.text_frame.grid_forget()
+                self.text_frame.pack_forget()
                 self.text_input_checkbox.configure(self)
-                self.text_input_checkbox.grid(row=1, column=2)
+                # self.text_input_checkbox.grid(row=1, column=2)
+                self.text_input_checkbox.pack(side='top', padx=10)
+
 
         def transpose_image():
             if check_for_img():
@@ -111,9 +115,16 @@ class App(ctk.CTk):
                 output = self.painter.draw_image(file_path)
                 pass
 
+        # Image canvas
+        self.image_canvas = ctk.CTkCanvas(self, height=400, width=600)
+        # self.image_canvas.grid(row=0, column=0, columnspan=5, pady=20, padx=20)
+        self.image_canvas.pack(side='top', pady=20)
+        self.image_canvas.bind('<B1-Motion>', click_to_move)
+
         # Buttons
         self.button_frame = ctk.CTkFrame(self)
-        self.button_frame.grid(column=0, row=1, sticky='nw', padx=20)
+        # self.button_frame.grid(column=0, row=1, sticky='nw', padx=20)
+        self.button_frame.pack(side='left', expand=True)
 
         self.select_file_btn = ctk.CTkButton(self.button_frame, text='Select File', command=select_file)
         self.select_file_btn.grid(pady=5)
@@ -126,7 +137,8 @@ class App(ctk.CTk):
 
         # Sliders
         self.slider_frame = ctk.CTkFrame(self)
-        self.slider_frame.grid(row=1, column=1, rowspan=2)
+        # self.slider_frame.grid(row=1, column=1, rowspan=2)
+        self.slider_frame.pack(padx=20, side='left')
 
         self.opacity_label = ctk.CTkLabel(self.slider_frame, text='Opacity')
         self.opacity_label.grid(row=0, column=0)
@@ -155,14 +167,9 @@ class App(ctk.CTk):
         # Testing textbox
         self.text_frame = ctk.CTkFrame(self)
 
-        self.text_input_checkbox = ctk.CTkCheckBox(self, text='Input text', command=text_checkbox)
+        self.text_input_checkbox = ctk.CTkCheckBox(self.text_frame, text='Input text', command=text_checkbox_place)
         self.text_input_checkbox.grid(row=1, column=2)
-
-        self.text_label = ctk.CTkLabel(self.text_frame, text='Enter Text:')
-        self.text_label.grid(padx=15, pady=5, row=0, sticky='w')
-
-        self.text_box = tk.Text(self.text_frame, width=50, height=10)
-        self.text_box.grid(row=1, pady=20, padx=20)
+        self.text_input_checkbox.pack(side='top')
 
         self.apply_btn = ctk.CTkButton(self.text_frame, text='Apply', command=paint_image)
         self.apply_btn.grid(pady=5, sticky='e', padx=10)
@@ -171,10 +178,7 @@ class App(ctk.CTk):
         self.add_image_btn = ctk.CTkButton(self.button_frame, text='Add image', command=transpose_image)
         self.add_image_btn.grid(pady=5)
 
-        # Image canvas
-        self.image_canvas = ctk.CTkCanvas(self, height=400, width=600)
-        self.image_canvas.grid(row=0, column=0, columnspan=5, pady=20, padx=20)
-        self.image_canvas.bind('<B1-Motion>', click_to_move)
+
 
 
 if __name__ == '__main__':
