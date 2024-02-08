@@ -3,9 +3,12 @@ from PIL import Image, ImageFont, ImageDraw, ImageTk
 
 class Painter:
     def __init__(self):
+        super().__init__()
         self.image = None
         self.image_path = None
         self.color = ((255, 255, 255), '#FFFFFF')
+        self.history = []
+        self.resized_image = None
 
     def draw_text(self, text, opacity, size, position):
         color_rgb = self.color[0]
@@ -22,16 +25,18 @@ class Painter:
             draw.text(position, text, font=font, fill=(color_rgb[0], color_rgb[1], color_rgb[2], opacity))
 
             self.image = Image.alpha_composite(base, overlayed_image)
-            return self.image
-
-    def draw_image(self, path):
-        pass
+            self.resize_image(self.image)
+            return self.resized_image
 
     def load_image(self):
         if self.image_path:
             self.image = Image.open(self.image_path)
             return self.image
         return None
+
+    def return_ratio(self):
+        ratio = self.image.size[0] / self.image.size[1]
+        return ratio
 
     def reset_image(self):
         self.image = Image.open(self.image_path)
@@ -45,3 +50,7 @@ class Painter:
 
     def return_image(self):
         return ImageTk.PhotoImage(self.image)
+
+    def resize_image(self, width, height):
+        self.resized_image = self.image.resize((width, height))
+        return ImageTk.PhotoImage(self.resized_image)

@@ -1,7 +1,10 @@
-import customtkinter as ctk
-import tkinter as tk
-from tkinter import filedialog, messagebox, END, colorchooser
 from Painter import Painter
+import customtkinter as ctk
+from tkinter import filedialog, messagebox, colorchooser
+from canvas import ImgCanvas, ImportImage
+from buttons import Buttons
+from property_panel import ImgProperties
+from settings import FILETYPES
 
 ctk.set_appearance_mode('dark')
 
@@ -11,173 +14,146 @@ ctk.set_default_color_theme('blue')
 class App(ctk.CTk):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.title = 'Watermarker'
-        self.minsize(width=400, height=360)
         self.painter = Painter()
         self.draw_pos = (0, 0)
-        self.file_types = (('JPEG files', '*.jpeg *.jpg'),
-                           ('PNG files', '*.png'),
-                           ('All files', '*.*'))
+
         # Images have to be defined this way, so they don't get garbage collected
         self.image_to_display = None
+        self.last_saved = False
+        self.draw_value_buffer = None
+
+        self.init_window()
+
+    def init_window(self):
+        self.title('Watermarker')
+        self.minsize(width=1200, height=800)
+        self.init_layout()
+
+    def init_layout(self):
+        inner_grid = ctk.CTkFrame(self)
+        inner_grid.pack(side='right', fill='both', expand=True)
+
+        # Canvas
+        self.import_image = ImportImage(inner_grid, self.open_image)
+        self.canvas = ImgCanvas(parent=inner_grid)
+
+        # Properties
+        self.property_menu = ImgProperties(inner_grid)
 
         # Buttons
-        def select_file():
-            file_path = filedialog.askopenfilename(filetypes=self.file_types)
+        self.button_grid = Buttons(self)
+        self.protocol('WM_DELETE_WINDOW', self.warn_on_close)
 
-            if file_path:
-                self.painter.image_path = file_path
-                self.painter.load_image()
-                update_canvas()
+    def open_sliders(self):
+        if self.check_if_img():
+            self.property_menu.show_sliders_()
 
-        def update_canvas():
-            raw_image = self.painter.image
+    def open_textbox(self):
+        if self.check_if_img():
+            self.property_menu.show_text_()
+
+    def open_image(self, file_path=None):
+        if file_path:
+            self.import_image.pack_forget()
+            self.painter.image_path = file_path
+            self.painter.load_image()
             self.image_to_display = self.painter.return_image()
+            self.canvas.load_image(self)
 
-            new_width = raw_image.size[0]
-            new_height = raw_image.size[1]
+    def update_canvas(self):
+        self.canvas.delete('all')
+        self.last_saved = False
+        self.image_to_display = self.painter.return_image()
+        self.canvas.load_image(self)
 
-            self.image_canvas.configure(width=new_width, height=new_height)
-            self.image_canvas.create_image((0, 0), image=self.image_to_display, anchor='nw')
+    def resize_image(self, event):
+        print(event)
+        # Get ratios
+        image_ratio = self.painter.return_ratio()
+        canvas_ratio = event.width / event.height
+        # Resize
+        if canvas_ratio > image_ratio:  # Canvas is wider
+            image_height = int(event.height)
+            image_width = int(image_height * image_ratio)
+        else:  # Canvas is taller
+            image_width = int(event.width)
+            image_height = int(image_width / image_ratio)
 
-        def paint_image():
-            if check_for_img():
-                opacity = int(self.opacity_slider.get())
-                size = int(self.size_slider.get())
+        self.canvas.delete('all')
+        self.resized_image = self.painter.resize_image(image_width, image_height)
+        self.image_to_display = self.painter.return_image()
+        self.canvas.create_image((event.width / 2, event.height / 2), image=self.resized_image)
 
-                text_to_paint = self.text_box.get(0.0, END)
+    def paint_image(self):
+        if self.check_if_img():
+            if self.top_level:
+                pass
+                # self.draw_value_buffer = self.top_level.return_values()
 
-                self.painter.draw_text(
-                    text=text_to_paint,
-                    opacity=opacity,
-                    size=size,
-                    position=self.draw_pos)
+            print(self.draw_value_buffer)
+            self.painter.draw_text(
+                text=self.draw_value_buffer['text'],
+                opacity=self.draw_value_buffer['opacity'],
+                size=self.draw_value_buffer['size'],
+                position=self.draw_pos)
 
-                update_canvas()
+            self.update_canvas()
 
-        def pick_color():
-            if check_for_img():
-                self.painter.color = colorchooser.askcolor()
-                update_canvas()
-                # TO-DO: Make this more efficient and less clunky
-                self.color_preview.configure(background=self.painter.color[1])
-                refresh_on_event(None)
+    def pick_color(self):
+        if self.check_if_img():
+            self.painter.color = colorchooser.askcolor()
+            self.button_grid.configure_preview(self)
+            self.update_canvas()
+            # TO-DO: Make this more efficient and less clunky
+            self.refresh_on_event(None)
 
-        def click_to_move(event):
-            self.draw_pos = (event.x, event.y)
-            paint_image()
+    def click_to_move(self, event):
+        if self.check_if_img() and self.draw_value_buffer:
+            to_center = self.draw_value_buffer['size'] / 2
+            self.draw_pos = (event.x - to_center, event.y - to_center)
+            print(self.draw_pos)
+            self.paint_image()
 
-        def save_image():
-            if check_for_img():
-                # VERY SLOPPY, TO-DO: Fix this mess
-                io_wrapper = filedialog.asksaveasfile(filetypes=self.file_types)
-
+    def save_image(self):
+        if self.check_if_img():
+            # VERY SLOPPY, TO-DO: Fix this mess
+            io_wrapper = filedialog.asksaveasfile(filetypes=FILETYPES)
+            if io_wrapper:
                 path = str(io_wrapper).split(' ')[1]
                 extension = path.split('.')[1].upper().strip("'")
 
                 self.painter.save_image(extension, io_wrapper)
+                self.last_saved = True
 
-        def check_for_img():
-            if not self.painter.image:
-                pop_up = messagebox
-                pop_up.showwarning(title='File', message='No image provided.')
-                return False
-            return True
+    def check_if_img(self):
+        if not self.painter.image:
+            pop_up = messagebox
+            pop_up.showwarning(title='File', message='No image provided.')
+            return False
+        return True
 
-        def refresh_on_event(event):
-            if check_for_img():
-                paint_image()
+    def refresh_on_event(self, event):
+        if self.check_if_img():
+            self.paint_image()
 
-        def reset_image():
+    def reset_image(self):
+        if self.check_if_img():
             self.painter.reset_image()
-            update_canvas()
+            self.update_canvas()
 
-        def text_checkbox():
-            if self.text_input_checkbox.get():
-                # Text frame and box move
-                self.text_frame.grid(row=1, column=2, padx=10, pady=10)
-                self.text_input_checkbox.configure(self.text_frame)
-                self.text_input_checkbox.grid(column=3, sticky='n')
+    def warn_on_close(self):
+        if self.painter.image and not self.last_saved:
+            response = messagebox.askyesnocancel('Exit', 'Are you sure you want to exit without saving?')
 
-            else:
-                # Text Box remove and reset of elements
-                self.text_frame.grid_forget()
-                self.text_input_checkbox.configure(self)
-                self.text_input_checkbox.grid(row=1, column=2)
-
-        def transpose_image():
-            if check_for_img():
-                file_path = filedialog.askopenfilename(filetypes=self.file_types)
-                output = self.painter.draw_image(file_path)
-                pass
-
-        # Buttons
-        self.button_frame = ctk.CTkFrame(self)
-        self.button_frame.grid(column=0, row=1, sticky='nw', padx=20)
-
-        self.select_file_btn = ctk.CTkButton(self.button_frame, text='Select File', command=select_file)
-        self.select_file_btn.grid(pady=5)
-
-        self.save_btn = ctk.CTkButton(self.button_frame, text='Save', command=save_image)
-        self.save_btn.grid(pady=5)
-
-        self.reset_image_btn = ctk.CTkButton(self.button_frame, text='Reset', command=reset_image)
-        self.reset_image_btn.grid(pady=5, row=3)
-
-        # Sliders
-        self.slider_frame = ctk.CTkFrame(self)
-        self.slider_frame.grid(row=1, column=1, rowspan=2)
-
-        self.opacity_label = ctk.CTkLabel(self.slider_frame, text='Opacity')
-        self.opacity_label.grid(row=0, column=0)
-
-        self.opacity_slider = ctk.CTkSlider(self.slider_frame, from_=0, to=255, orientation='vertical',
-                                            number_of_steps=255, command=refresh_on_event)
-        self.opacity_slider.grid(row=1, column=0)
-
-        self.size_label = ctk.CTkLabel(self.slider_frame, text='Size')
-        self.size_label.grid(row=0, column=1)
-
-        self.size_slider = ctk.CTkSlider(self.slider_frame, from_=1, to=255, orientation='vertical',
-                                         number_of_steps=255, command=refresh_on_event)
-        self.size_slider.grid(row=1, column=1, padx=20)
-
-        # Color select
-        self.color_frame = ctk.CTkFrame(self.button_frame)
-        self.color_frame.grid(row=2, column=0, sticky='nw', padx=20)
-
-        self.color_preview = ctk.CTkCanvas(self.color_frame, width=20, height=20, background=self.painter.color[1])
-        self.color_preview.grid(pady=10)
-
-        self.pick_color_btn = ctk.CTkButton(self.color_frame, text='Pick Color', command=pick_color)
-        self.pick_color_btn.grid(pady=5, row=2, column=0)
-
-        # Testing textbox
-        self.text_frame = ctk.CTkFrame(self)
-
-        self.text_input_checkbox = ctk.CTkCheckBox(self, text='Input text', command=text_checkbox)
-        self.text_input_checkbox.grid(row=1, column=2)
-
-        self.text_label = ctk.CTkLabel(self.text_frame, text='Enter Text:')
-        self.text_label.grid(padx=15, pady=5, row=0, sticky='w')
-
-        self.text_box = tk.Text(self.text_frame, width=50, height=10)
-        self.text_box.grid(row=1, pady=20, padx=20)
-
-        self.apply_btn = ctk.CTkButton(self.text_frame, text='Apply', command=paint_image)
-        self.apply_btn.grid(pady=5, sticky='e', padx=10)
-
-        # Transpose image button
-        self.add_image_btn = ctk.CTkButton(self.button_frame, text='Add image', command=transpose_image)
-        self.add_image_btn.grid(pady=5)
-
-        # Image canvas
-        self.image_canvas = ctk.CTkCanvas(self, height=400, width=600)
-        self.image_canvas.grid(row=0, column=0, columnspan=5, pady=20, padx=20)
-        self.image_canvas.bind('<B1-Motion>', click_to_move)
+            if response:
+                return self.destroy()
+            elif response is None:
+                return None
+            elif response is False:
+                self.save_image()
+                return self.destroy()
 
 
 if __name__ == '__main__':
     app = App()
-
     app.mainloop()
