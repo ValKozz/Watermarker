@@ -7,7 +7,7 @@ class ImportImage(ctk.CTkFrame):
     def __init__(self, parent, import_img):
         super().__init__(master=parent)
 
-        self.pack_configure(side='right', expand=True, fill='both', padx=15, pady=15)
+        self.pack_configure(side='left', expand=True, fill='both', padx=15, pady=15)
         self.import_image = import_img
 
         btn_open = ctk.CTkButton(self, text='Open image', command=self.open_dialog)
