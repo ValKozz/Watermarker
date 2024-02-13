@@ -4,11 +4,11 @@ from settings import FILETYPES
 
 
 class ImportImage(ctk.CTkFrame):
-    def __init__(self, parent, import_img):
+    def __init__(self, parent, import_img_func):
         super().__init__(master=parent)
 
         self.pack_configure(side='left', expand=True, fill='both', padx=15, pady=15)
-        self.import_image = import_img
+        self.import_image = import_img_func
 
         btn_open = ctk.CTkButton(self, text='Open image', command=self.open_dialog)
         btn_open.pack(expand=True)
@@ -23,6 +23,11 @@ class ImgCanvas(ctk.CTkCanvas):
         super().__init__(master=parent)
         self.configure(bg='#242424', background='#242424', bd=0, highlightthickness=0)
 
-    def load_image(self, parent):
+    def load_image(self, parent, import_func):
         self.pack(side='left', expand=True, padx=15, pady=15, fill='both')
         self.bind('<Configure>', parent.resize_image)
+
+        def test(event):
+            import_func(event)
+
+        self.bind('<Button-1>', test)
