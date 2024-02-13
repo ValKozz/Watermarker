@@ -19,23 +19,24 @@ class Painter:
         self.edited_image = self.edited_image.rotate(img_rotation)
 
         if text:
-            self.draw_text(text, wt_opacity, wt_size, draw_pos)
+            self.draw_text(text, wt_opacity, wt_size, wt_rotation, draw_pos)
 
-    def draw_text(self, text, opacity, size, position):
+    def draw_text(self, text, opacity, size, rotation, position):
         color_rgb = self.color[0]
 
         with Image.open(self.image_path).convert('RGBA') as base:
+            # Get the font
+            font = ImageFont.truetype(font='Pillow/Tests/FreeMono.ttf', size=size)
+
             # make a blank image for the text, initialized to transparent text color
             overlayed_image = Image.new("RGBA", base.size, (255, 255, 255, 0))
 
-            # Get the font
-            font = ImageFont.truetype(font='Pillow/Tests/FreeMono.ttf', size=size)
             # Get the context i.e. do what to what
             draw = ImageDraw.Draw(overlayed_image)
             # TO-DO: Find better way to retrieve rgb values outside the tuple
             draw.text(position, text, font=font, fill=(color_rgb[0], color_rgb[1], color_rgb[2], opacity))
 
-            self.edited_image = Image.alpha_composite(base, overlayed_image)
+            self.edited_image = Image.alpha_composite(base, overlayed_image.rotate(rotation))
             # self.resize_image(self.edited_image)
             return self.resized_image
 

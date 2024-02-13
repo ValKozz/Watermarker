@@ -37,6 +37,10 @@ class App(ctk.CTk):
         self.img_rotation = ctk.DoubleVar(self, ROTATION_DEFAULT)
 
         self.img_rotation.trace('w', self.update_image)
+        self.wt_rotation.trace('w', self.update_image)
+        self.wt_size.trace('w', self.update_image)
+        self.wt_opacity.trace('w', self.update_image)
+
 
     def update_image(self, *args):
         if self.check_if_img(to_display=False):
