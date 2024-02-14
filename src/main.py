@@ -31,7 +31,7 @@ class App(ctk.CTk):
         self.insert_text_value = DEFAULT_WATERMARK_TEXT
         self.draw_pos = (0, 0)
         self.wt_rotation = ctk.DoubleVar(self, ROTATION_DEFAULT)
-        self.wt_size = ctk.IntVar(self, SLIDER_DEFAULT)
+        self.wt_size = ctk.IntVar(self, SIZE_DEFAULT)
         self.wt_opacity = ctk.IntVar(self, SLIDER_DEFAULT)
         self.preview_color = DEFAULT_COLOR
         self.img_rotation = ctk.DoubleVar(self, ROTATION_DEFAULT)
@@ -41,10 +41,8 @@ class App(ctk.CTk):
         self.wt_size.trace('w', self.update_image)
         self.wt_opacity.trace('w', self.update_image)
 
-
     def update_image(self, *args):
         if self.check_if_img(to_display=False):
-
             self.painter.apply_changes(
                 self.insert_text_value,
                 self.draw_pos,
@@ -70,11 +68,15 @@ class App(ctk.CTk):
 
         # Properties
         self.property_menu = PropertyMasterPanel(inner_grid, self.wt_size, self.wt_opacity, self.wt_rotation,
-                                                 self.insert_text_value, self.img_rotation)
+                                                 self.insert_text_value, self.img_rotation, self.update_text)
 
         # Buttons
         self.button_grid = Buttons(self)
         self.protocol('WM_DELETE_WINDOW', self.warn_on_close)
+
+    def update_text(self, text):
+        self.insert_text_value = text
+        print(f'Call to main: {self.insert_text_value} ')
 
     def open_image(self, file_path=None):
         if file_path:
@@ -111,17 +113,14 @@ class App(ctk.CTk):
         self.canvas.create_image((self.canvas_width / 2, self.canvas_height / 2), image=self.resized_image)
 
     def pick_color(self):
-        # TODO
         if self.check_if_img():
-            self.painter.color = colorchooser.askcolor()
+            self.preview_color = colorchooser.askcolor()
             self.button_grid.configure_preview(self)
-            self.update_canvas()
-            # TO-DO: Make this more efficient and less clunky
+            self.update_image()
 
     def click_to_move(self, event):
-        print(self.wt_size.get())
-        self.draw_pos = (event.x/2, event.y/2)
-        print(self.draw_pos)
+        self.draw_pos = (event.x / 2, event.y / 2)
+        # print(f'Draw x and y: {self.draw_pos}')
         self.update_image()
 
     def save_image(self):

@@ -9,7 +9,7 @@ class Buttons(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(master=parent)
         self.init_buttons(parent)
-        self.init_dropdown(parent)
+        # self.init_dropdown(parent)
 
     def init_buttons(self, parent):
         self.pack(side='left', fill='y')
@@ -47,20 +47,20 @@ class Buttons(ctk.CTkFrame):
         self.clear_tooltip = Pmw.Balloon(self)
         self.clear_tooltip.bind(self.btn_clear_layer, 'Clear Edit layer')
 
-        self.color_preview = ctk.CTkCanvas(self, width=BUTTON_WIDTH, height=BUTTON_HEIGHT, background=parent.painter.color[1])
+        self.color_preview = ctk.CTkCanvas(self, width=BUTTON_WIDTH, height=BUTTON_HEIGHT, background=parent.preview_color[1])
         self.color_preview.pack(side='bottom', pady=10)
 
     def configure_preview(self, parent):
-        self.color_preview.configure(background=parent.painter.color[1])
+        self.color_preview.configure(background=parent.preview_color[1])
 
-    def init_dropdown(self, parent):
-        # Dropdown menu Setup
-
-        self.dropdown_menu = CTkMenuBar(master=parent)
-        file_menu = self.dropdown_menu.add_cascade('File')
-
-        file_dropdown = CustomDropdownMenu(widget=file_menu)
-        file_dropdown.add_option(option='Open...', command=parent.open_image)
-        save_menu = file_dropdown.add_submenu('Save...')
-        save_menu.add_option(option='Save', command=lambda: print('test'))
-        save_menu.add_option(option='Save as...', command=parent.save_image)
+    # def init_dropdown(self, parent):
+    #     # Dropdown menu Setup
+    #
+    #     self.dropdown_menu = CTkMenuBar(master=parent)
+    #     file_menu = self.dropdown_menu.add_cascade('File')
+    #
+    #     file_dropdown = CustomDropdownMenu(widget=file_menu)
+    #     file_dropdown.add_option(option='Open...', command=parent.open_image)
+    #     save_menu = file_dropdown.add_submenu('Save...')
+    #     save_menu.add_option(option='Save', command=lambda: print('test'))
+    #     save_menu.add_option(option='Save as...', command=parent.save_image)

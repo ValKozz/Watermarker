@@ -30,4 +30,4 @@ class ImgCanvas(ctk.CTkCanvas):
         def test(event):
             import_func(event)
 
-        self.bind('<Button-1>', test)
+        self.bind('<B1-Motion>', test)

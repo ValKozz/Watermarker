@@ -4,12 +4,12 @@ from tkinter import END, Text
 
 class TextFrame(CTkFrame):
     # TO-DO: Dynamic text update, all the way to main
-    def __init__(self, parent, text_value):
+    def __init__(self, parent, text_value, text_updater):
         super().__init__(master=parent)
         self.text_value = text_value
-        self.init_text_layout(text_value)
+        self.init_text_layout(text_value, text_updater)
 
-    def init_text_layout(self, text_value):
+    def init_text_layout(self, text_value, text_updater):
         text_label = CTkLabel(self, text='Enter Text:')
         text_label.grid(row=1, column=0, pady=5, padx=10, sticky='W')
 
@@ -17,10 +17,13 @@ class TextFrame(CTkFrame):
         self.text_box.grid(row=2, column=0, columnspan=2, rowspan=2, pady=10, padx=10)
         self.text_box.insert(0.0, text_value)
 
-        self.text_box.bind('<KeyRelease>', self.get_text)
+        def get_text(event):
+            if self.text_box.get(0.0, END):
+                text_updater(text=self.text_box.get(0.0, END))
+            else:
+                text_updater(text='')
 
-    def get_text(self, event):
-        self.text_value = self.text_box.get(0.0, END)
+        self.text_box.bind('<KeyRelease>', get_text)
 
 
 class Sliders(CTkFrame):

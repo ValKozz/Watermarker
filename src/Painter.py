@@ -8,37 +8,36 @@ class Painter:
         self.edited_image = None
 
         self.image_path = None
-        self.color = ((255, 255, 255), '#FFFFFF')
         self.history = []
         self.resized_image = None
 
     def apply_changes(self, text, draw_pos, wt_rotation, wt_size, wt_opacity, color, img_rotation):
-        # TODO: Set Color, Draw text
+        # TODO: Text centering and Insertion
         # Edit image first
         self.edited_image = self.original_image
         self.edited_image = self.edited_image.rotate(img_rotation)
 
         if text:
-            self.draw_text(text, wt_opacity, wt_size, wt_rotation, draw_pos)
+            self.draw_text(text, wt_opacity, wt_size, wt_rotation, draw_pos, color)
 
-    def draw_text(self, text, opacity, size, rotation, position):
-        color_rgb = self.color[0]
+    def draw_text(self, text, opacity, size, rotation, position, color):
+        color_rgb = color[0]
+        self.edited_image = self.edited_image.convert('RGBA')
+        txt = Image.new(self.edited_image.mode, self.edited_image.size, (255, 255, 255, 0))
 
-        with Image.open(self.image_path).convert('RGBA') as base:
-            # Get the font
-            font = ImageFont.truetype(font='Pillow/Tests/FreeMono.ttf', size=size)
+        # Get the font
+        font = ImageFont.truetype(font='Pillow/Tests/FreeMono.ttf', size=size)
+        # Center Text based on the size
 
-            # make a blank image for the text, initialized to transparent text color
-            overlayed_image = Image.new("RGBA", base.size, (255, 255, 255, 0))
+        # Magic to center the text on clicked coordinates.
+        position = (position[0] - round(font.getlength(text) / 2), position[1] - round(font.getmetrics()[1]))
 
-            # Get the context i.e. do what to what
-            draw = ImageDraw.Draw(overlayed_image)
-            # TO-DO: Find better way to retrieve rgb values outside the tuple
-            draw.text(position, text, font=font, fill=(color_rgb[0], color_rgb[1], color_rgb[2], opacity))
+        # print(f'Position: {position}')
+        # print(f'Font geom: {font.getmetrics()}')
 
-            self.edited_image = Image.alpha_composite(base, overlayed_image.rotate(rotation))
-            # self.resize_image(self.edited_image)
-            return self.resized_image
+        draw = ImageDraw.Draw(txt)
+        draw.text(position, text, font=font, fill=(color_rgb[0], color_rgb[1], color_rgb[2], opacity), align='center')
+        self.edited_image = Image.alpha_composite(self.edited_image, txt.rotate(rotation))
 
     def load_image(self):
         if self.image_path:
