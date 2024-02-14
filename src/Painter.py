@@ -11,19 +11,36 @@ class Painter:
         self.history = []
         self.resized_image = None
 
-    def apply_changes(self, text, draw_pos, wt_rotation, wt_size, wt_opacity, color, img_rotation):
+    def apply_changes(self, text, draw_pos, wt_rotation, wt_size, wt_opacity, color, img_rotation, flip_options):
         # TODO: Text centering and Insertion
         # Edit image first
         self.edited_image = self.original_image
+        self.apply_flip(flip_options)
         self.edited_image = self.edited_image.rotate(img_rotation)
 
         if text:
             self.draw_text(text, wt_opacity, wt_size, wt_rotation, draw_pos, color)
 
+    def apply_flip(self, flip_options):
+        to_apply = None
+        for option in flip_options:
+            if flip_options[option]:
+                to_apply = option
+
+        condition = to_apply.split('_')[1]
+
+        if condition == 'M':
+            self.edited_image = self.edited_image.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
+        else:
+            self.edited_image = self.edited_image.rotate(int(condition))
+
     def draw_text(self, text, opacity, size, rotation, position, color):
+        # TODO: Change method to paste
         color_rgb = color[0]
+        # Have to convert so alpha composite works
         self.edited_image = self.edited_image.convert('RGBA')
-        txt = Image.new(self.edited_image.mode, self.edited_image.size, (255, 255, 255, 0))
+
+        overlay_image = Image.new(self.edited_image.mode, self.edited_image.size, (255, 255, 255, 0))
 
         # Get the font
         font = ImageFont.truetype(font='Pillow/Tests/FreeMono.ttf', size=size)
@@ -35,9 +52,9 @@ class Painter:
         # print(f'Position: {position}')
         # print(f'Font geom: {font.getmetrics()}')
 
-        draw = ImageDraw.Draw(txt)
+        draw = ImageDraw.Draw(overlay_image)
         draw.text(position, text, font=font, fill=(color_rgb[0], color_rgb[1], color_rgb[2], opacity), align='center')
-        self.edited_image = Image.alpha_composite(self.edited_image, txt.rotate(rotation))
+        self.edited_image = Image.alpha_composite(self.edited_image, overlay_image.rotate(rotation))
 
     def load_image(self):
         if self.image_path:

@@ -35,7 +35,7 @@ class App(ctk.CTk):
         self.wt_opacity = ctk.IntVar(self, SLIDER_DEFAULT)
         self.preview_color = DEFAULT_COLOR
         self.img_rotation = ctk.DoubleVar(self, ROTATION_DEFAULT)
-
+        self.flip_options = FLIP_OPT
         self.img_rotation.trace('w', self.update_image)
         self.wt_rotation.trace('w', self.update_image)
         self.wt_size.trace('w', self.update_image)
@@ -50,7 +50,8 @@ class App(ctk.CTk):
                 self.wt_size.get(),
                 self.wt_opacity.get(),
                 self.preview_color,
-                self.img_rotation.get())
+                self.img_rotation.get(),
+                self.flip_options)
             self.update_canvas()
 
     def init_window(self):
@@ -68,15 +69,21 @@ class App(ctk.CTk):
 
         # Properties
         self.property_menu = PropertyMasterPanel(inner_grid, self.wt_size, self.wt_opacity, self.wt_rotation,
-                                                 self.insert_text_value, self.img_rotation, self.update_text)
+                                                 self.insert_text_value, self.img_rotation, self.update_text,
+                                                 self.update_flip_opt)
 
         # Buttons
         self.button_grid = Buttons(self)
         self.protocol('WM_DELETE_WINDOW', self.warn_on_close)
 
+    def update_flip_opt(self, options):
+        self.flip_options = options
+        self.update_image()
+
     def update_text(self, text):
         self.insert_text_value = text
         print(f'Call to main: {self.insert_text_value} ')
+        self.update_image()
 
     def open_image(self, file_path=None):
         if file_path:
@@ -144,8 +151,10 @@ class App(ctk.CTk):
 
     def reset_image(self):
         if self.check_if_img():
-            self.painter.reset_image()
-            self.update_canvas()
+            if self.check_if_img():
+                self.painter.reset_image()
+                self.init_params()
+                self.update_image()
 
     def warn_on_close(self):
         if self.painter.edited_image and not self.last_saved:

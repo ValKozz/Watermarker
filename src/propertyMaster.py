@@ -5,7 +5,7 @@ from settings import *
 
 
 class PropertyMasterPanel(CTkFrame):
-    def __init__(self, parent, size, opacity, wt_rotation, text, img_rotation, text_updater):
+    def __init__(self, parent, size, opacity, wt_rotation, text, img_rotation, text_updater, flip_options):
         super().__init__(parent)
         self.pack(side='right', fill='y', expand=False)
         self.rowconfigure(0, weight=1, uniform='a')
@@ -14,7 +14,7 @@ class PropertyMasterPanel(CTkFrame):
         self.is_open = False
         self.button = None
         self.init_button()
-        self.tabs = PropTabs(self, size, opacity, wt_rotation, text, img_rotation, text_updater)
+        self.tabs = PropTabs(self, size, opacity, wt_rotation, text, img_rotation, text_updater, flip_options)
 
     def init_button(self):
         self.button = CTkButton(self, text='', image=open_panel, height=BUTTON_HEIGHT, width=BUTTON_WIDTH,
@@ -37,7 +37,7 @@ class PropertyMasterPanel(CTkFrame):
 
 
 class PropTabs(CTkTabview):
-    def __init__(self, parent, size, opacity, wt_rotation, text, img_rotation, text_updater):
+    def __init__(self, parent, size, opacity, wt_rotation, text, img_rotation, text_updater, flip_options ):
         super().__init__(master=parent)
 
         self.wt_props = self.add('Watermark Options')
@@ -45,7 +45,7 @@ class PropTabs(CTkTabview):
         self.export_img = self.add('Export/Save')
 
         self.init_wt_props(size, opacity, wt_rotation, text, text_updater)
-        self.init_img_props(img_rotation)
+        self.init_img_props(img_rotation, flip_options)
 
     def init_wt_props(self, size, opacity, wt_rotation, text, text_updater):
 
@@ -57,9 +57,9 @@ class PropTabs(CTkTabview):
         opacity_slider = Sliders(self.wt_props, 'Opacity', opacity, 0, 255).grid(row=2, column=0, columnspan=2, pady=20)
         rotation = Sliders(self.wt_props, 'Rotation', wt_rotation, 0, 360).grid(row=3, column=0, columnspan=2, pady=20)
 
-    def init_img_props(self, rotation):
+    def init_img_props(self, rotation, flip_options):
         self.image_props.rowconfigure((0, 1, 2, 3), weight=1)
         self.image_props.columnconfigure((0, 1), weight=1)
 
         rotation = Sliders(self.image_props, 'Rotation', rotation, 0, 360).grid(row=0, column=0, columnspan=2, pady=20)
-        test_panel = PropertyButtons(self.image_props, 'Test Flip', 0).grid(row=1, column=0, columnspan=2, pady=20)
+        test_panel = PropertyButtons(self.image_props, 'Flip/Mirror', flip_options).grid(row=1, column=0, columnspan=2, pady=20)
