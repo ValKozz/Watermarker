@@ -12,13 +12,12 @@ class Painter:
         self.resized_image = None
 
     def apply_changes(self, text, draw_pos, wt_rotation, wt_size, wt_opacity, color, img_rotation, flip_options):
-        # TODO: Text centering and Insertion
         # Edit image first
         self.edited_image = self.original_image
         self.apply_flip(flip_options)
         self.edited_image = self.edited_image.rotate(img_rotation)
 
-        if text:
+        if text and wt_size > 0:
             self.draw_text(text, wt_opacity, wt_size, wt_rotation, draw_pos, color)
 
     def apply_flip(self, flip_options):

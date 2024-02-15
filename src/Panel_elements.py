@@ -1,10 +1,9 @@
 from customtkinter import CTkSlider, CTkLabel, CTkFrame, CTkButton
-from tkinter import END, Text
+from tkinter import END, Text, filedialog
 from settings import *
 
 
 class TextFrame(CTkFrame):
-    # TO-DO: Dynamic text update, all the way to main
     def __init__(self, parent, text_value, text_updater):
         super().__init__(master=parent)
         self.text_value = text_value
@@ -44,14 +43,14 @@ class Sliders(CTkFrame):
                                 from_=min,
                                 to=max,
                                 variable=value,
-                                command=self.update_value_label
+                                command=self.update_value_label,
                                 ).grid(row=1, column=0, columnspan=2, padx=10, pady=10)
 
     def update_value_label(self, value):
         self.value_label.configure(text=f'{round(value)}')
 
 
-class PropertyButtons(CTkFrame):
+class FlipButtons(CTkFrame):
     def __init__(self, parent, text, options_updater):
         super().__init__(master=parent)
         options = FLIP_OPT
@@ -114,8 +113,45 @@ class PropertyButtons(CTkFrame):
                                      command=click_180)
         self.flip180_btn.grid(row=1, column=3, padx=5)
 
-        self.flip_mirror = CTkButton(self, text='90', width=PANEL_BUTTON_SIZE, height=PANEL_BUTTON_SIZE,
+        self.flip_mirror = CTkButton(self, text='Mirror', width=PANEL_BUTTON_SIZE, height=PANEL_BUTTON_SIZE,
                                      command=click_mirror)
         self.flip_mirror.grid(row=1, column=4, padx=5)
 
         self.buttons = [self.none_btn, self.flip90_btn, self.flip_m90_btn, self.flip180_btn, self.flip_mirror]
+
+
+class ExportButtons(CTkFrame):
+    def __init__(self, parent, save_func, open_func):
+        super().__init__(master=parent)
+
+        self.rowconfigure((0, 1), weight=1)
+        self.columnconfigure((0, 1, 2, 3), weight=1)
+        self.init_layout(save_func, open_func)
+
+    def init_layout(self, save_func, open_func):
+        def save_as():
+            save_btn.configure(state='normal', command=save_over_old)
+            save_func()
+
+        def save_over_old():
+            # TODO
+            save_func(saved=True)
+
+        def open_new():
+            path = filedialog.askopenfilename(filetypes=FILETYPES)
+            open_func(path)
+
+        save_label = CTkLabel(self, text='Save Image').grid(row=0, column=0, columnspan=2, pady=10)
+        save_btn = CTkButton(self, text='Save', state='disabled')
+        save_btn.grid(row=1, column=0, padx=10)
+
+        saveas_btn = CTkButton(self, text='Save as.../Export', command=save_as)
+        saveas_btn.grid(row=1, column=1, padx=10)
+
+        reset_label = CTkLabel(self, text='Reset Image').grid(row=4, column=0, columnspan=2, pady=10)
+        reset_btn = CTkButton(self, text='Reset')
+        reset_btn.grid(row=5, column=0, columnspan=2)
+
+        open_label = CTkLabel(self, text='Open New...').grid(row=6, column=0, columnspan=2, pady=10)
+        open_btn = CTkButton(self, text='Open', command=open_new)
+        open_btn.grid(row=7, column=0, columnspan=2)

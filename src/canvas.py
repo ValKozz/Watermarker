@@ -23,11 +23,14 @@ class ImgCanvas(ctk.CTkCanvas):
         super().__init__(master=parent)
         self.configure(bg='#242424', background='#242424', bd=0, highlightthickness=0)
 
-    def load_image(self, parent, import_func):
+    def load_image(self, parent, move_watermark_func):
+        self.delete('all')
+        self.pack_forget()
+
         self.pack(side='left', expand=True, padx=15, pady=15, fill='both')
         self.bind('<Configure>', parent.resize_image)
 
-        def test(event):
-            import_func(event)
+        def move(event):
+            move_watermark_func(event)
 
-        self.bind('<B1-Motion>', test)
+        self.bind('<B1-Motion>', move)

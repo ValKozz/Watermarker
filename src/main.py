@@ -28,20 +28,25 @@ class App(ctk.CTk):
         self.init_window()
 
     def init_params(self):
+        self.opened = False
         self.insert_text_value = DEFAULT_WATERMARK_TEXT
-        self.draw_pos = (0, 0)
+        self.draw_pos = None
         self.wt_rotation = ctk.DoubleVar(self, ROTATION_DEFAULT)
         self.wt_size = ctk.IntVar(self, SIZE_DEFAULT)
         self.wt_opacity = ctk.IntVar(self, SLIDER_DEFAULT)
         self.preview_color = DEFAULT_COLOR
         self.img_rotation = ctk.DoubleVar(self, ROTATION_DEFAULT)
         self.flip_options = FLIP_OPT
+
         self.img_rotation.trace('w', self.update_image)
         self.wt_rotation.trace('w', self.update_image)
         self.wt_size.trace('w', self.update_image)
         self.wt_opacity.trace('w', self.update_image)
 
     def update_image(self, *args):
+        if not self.draw_pos:
+            self.draw_pos = (self.image_height/2, self.image_width/2)
+
         if self.check_if_img(to_display=False):
             self.painter.apply_changes(
                 self.insert_text_value,
@@ -60,30 +65,20 @@ class App(ctk.CTk):
         self.init_layout()
 
     def init_layout(self):
-        inner_grid = ctk.CTkFrame(self)
-        inner_grid.pack(side='right', fill='both', expand=True, padx=5, pady=5)
+        self.inner_grid = ctk.CTkFrame(self)
+        self.inner_grid.pack(side='right', fill='both', expand=True, padx=5, pady=5)
 
         # Canvas
-        self.import_image = ImportImage(inner_grid, self.open_image)
-        self.canvas = ImgCanvas(parent=inner_grid)
+        self.import_image = ImportImage(self.inner_grid, self.open_image)
+        self.canvas = ImgCanvas(parent=self.inner_grid)
 
         # Properties
-        self.property_menu = PropertyMasterPanel(inner_grid, self.wt_size, self.wt_opacity, self.wt_rotation,
+        self.property_menu = PropertyMasterPanel(self.inner_grid, self.wt_size, self.wt_opacity, self.wt_rotation,
                                                  self.insert_text_value, self.img_rotation, self.update_text,
-                                                 self.update_flip_opt)
-
+                                                 self.update_flip_opt, self.save_image, self.open_image)
         # Buttons
         self.button_grid = Buttons(self)
         self.protocol('WM_DELETE_WINDOW', self.warn_on_close)
-
-    def update_flip_opt(self, options):
-        self.flip_options = options
-        self.update_image()
-
-    def update_text(self, text):
-        self.insert_text_value = text
-        print(f'Call to main: {self.insert_text_value} ')
-        self.update_image()
 
     def open_image(self, file_path=None):
         if file_path:
@@ -94,7 +89,12 @@ class App(ctk.CTk):
             self.painter.load_image()
             # Get image to display on canvas
             self.image_to_display = self.painter.return_image()
-            self.canvas.load_image(self, import_func=self.click_to_move)
+            self.canvas.load_image(self, move_watermark_func=self.click_to_move)
+            # Temporary fix, so it doesn't try to resize the image without any params regarding size
+            if self.opened:
+                self.init_params()
+                self.update_image()
+            self.opened = True
 
     def resize_image(self, event=None):
         # Get ratios
@@ -130,16 +130,30 @@ class App(ctk.CTk):
         # print(f'Draw x and y: {self.draw_pos}')
         self.update_image()
 
-    def save_image(self):
+    def update_flip_opt(self, options):
+        self.flip_options = options
+        self.update_image()
+
+    def update_text(self, text):
+        self.insert_text_value = text
+        # print(f'Call to main: {self.insert_text_value} ')
+        self.update_image()
+
+    def save_image(self, saved=True):
         # TODO
+        if self.last_saved and saved:
+            self.update_image()
+            self.painter.save_image(self.extension, self.io_wrapper)
+            return
+
         if self.check_if_img():
             # VERY SLOPPY, TO-DO: Fix this mess
-            io_wrapper = filedialog.asksaveasfile(filetypes=FILETYPES)
-            if io_wrapper:
-                path = str(io_wrapper).split(' ')[1]
-                extension = path.split('.')[1].upper().strip("'")
+            self.io_wrapper = filedialog.asksaveasfile(filetypes=FILETYPES)
+            if self.io_wrapper:
+                self.path = str(self.io_wrapper).split(' ')[1]
+                self.extension = self.path.split('.')[1].upper().strip("'")
 
-                self.painter.save_image(extension, io_wrapper)
+                self.painter.save_image(self.extension, self.io_wrapper)
                 self.last_saved = True
 
     def check_if_img(self, to_display=True):

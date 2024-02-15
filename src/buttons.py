@@ -14,7 +14,7 @@ class Buttons(ctk.CTkFrame):
     def init_buttons(self, parent):
         self.pack(side='left', fill='y')
 
-        self.btn_pick_color = ctk.CTkButton(self, image= color_palette_icon, text='', height=BUTTON_HEIGHT,
+        self.btn_pick_color = ctk.CTkButton(self, image=color_palette_icon, text='', height=BUTTON_HEIGHT,
                                             width=BUTTON_WIDTH, command=parent.pick_color)
         self.btn_pick_color.pack(side='top', pady=10)
 
